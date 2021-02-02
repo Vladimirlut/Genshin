@@ -8,7 +8,7 @@ from textwrap import wrap
 class GenshinMod(loader.Module):
 	"""Символ пмздабольства 2020"""
 	strings = {
-		"name": "Among Us"
+		"name": "Genshin"
 	}
 
 	async def client_ready(self, client, db):
