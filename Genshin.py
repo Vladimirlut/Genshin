@@ -42,7 +42,7 @@ class GenshinMod(loader.Module):
 			await message.edit("Доступные цвета:\n"+("\n".join([f"• <code>{i}</code>" for i in list(clrs.keys())])))
 			return
 		
-		url = "https://raw.githubusercontent.com/Vladimirlut/Genshin/"
+		url = "https://raw.githubusercontent.com/Vladimirlut/Genshin/main/"
 		font = ImageFont.truetype(BytesIO(get(url+"bold.ttf").content), 60)
 		imposter = Image.open(BytesIO(get(f"{url}{clr}.png").content))
 		text_ = "\n".join(["\n".join(wrap(part, 30)) for part in text.split("\n")])
