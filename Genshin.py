@@ -50,7 +50,7 @@ class GenshinMod(loader.Module):
 		text = Image.new("RGBA", (w+30, h+30))
 		ImageDraw.Draw(text).multiline_text((15,15), text_, "#FFF", font, stroke_width=2, stroke_fill="#000")
 		w = imposter.width + text.width + 10
-		h = max(imposter.height - 20, text.height)
+		h = max(imposter.height, text.height) - 20
 		image = Image.new("RGBA", (w, h))
 		image.paste(imposter, (0, h-imposter.height), imposter)
 		image.paste(text, (w-text.width, 0), text)
