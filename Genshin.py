@@ -52,8 +52,8 @@ class GenshinMod(loader.Module):
 		w = imposter.width + text.width + 10
 		h = max(imposter.height, text.height)
 		image = Image.new("RGBA", (w, h))
-		image.paste(imposter, (0, h-imposter.height), imposter)
-		image.paste(text, (w-text.width, -10), text)
+		image.paste(imposter, (0, h-imposter.height - 10), imposter)
+		image.paste(text, (w-text.width, 0), text)
 		image.thumbnail((512, 512))
 		output = BytesIO()
 		output.name = "genshin.webp"
