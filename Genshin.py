@@ -17,7 +17,7 @@ class GenshinMod(loader.Module):
 	
 	@loader.owner
 	async def gicmd(self, message):
-		clrs = {'klee1': 101, 'klee': 2, 'qiqi': 3, 'qiqia': 4, 'diona1': 105, 'diona': 1, 'paim': 6, 'pai': 7}
+		clrs = {'klee1': 101, 'klee': 2, 'qiqi': 3, 'qiqia': 4, 'diona1': 105, 'diona': 1, 'paim': 5, 'pai': 6}
 		"""текст или реплай"""
 		clr = randint(1,7)
 		text = utils.get_args_raw(message)
