@@ -67,4 +67,4 @@ async def bruh(message, user):
 	ln = user.last_name
 	name = fn + (" "+ln if ln else "")
 	name = "<b>"+name
-	await message.edit(name+choice([" ", " не "])+"был предателем!</b>")
+	await message.edit(name+choice([" ", " не "])+"был Паймон!</b>")
