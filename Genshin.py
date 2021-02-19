@@ -5,14 +5,14 @@ from random import randint, choice
 from PIL import Image, ImageFont, ImageDraw
 from textwrap import wrap
 
-class Genshin1Mod(loader.Module):
+class GenshinMod(loader.Module):
 	"""Лольки геншина.
 	Как использовать:
 	.gi@vladimirlut *лолька* текст
 	Пример:
 	.gi@vladimirlut diona го бухать"""
 	strings = {
-		"name": "GenshinTest"
+		"name": "Genshin"
 	}
 
 	async def client_ready(self, client, db):
@@ -20,7 +20,7 @@ class Genshin1Mod(loader.Module):
 
 	
 	@loader.owner
-	async def gi1cmd(self, message):
+	async def gicmd(self, message):
 		"""Злая Паймон: pai
 	Добрая Паймон: paim
 	Добрая Кли: klee
