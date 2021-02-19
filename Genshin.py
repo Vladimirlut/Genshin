@@ -5,10 +5,14 @@ from random import randint, choice
 from PIL import Image, ImageFont, ImageDraw
 from textwrap import wrap
 
-class GenshinMod(loader.Module):
-	"""Символ пмздабольства 2020"""
+class Genshin1Mod(loader.Module):
+	"""Лольки геншина.
+	Как использовать:
+	.gi@vladimirlut *лолька* текст
+	Пример:
+	.gi@vladimirlut diona го бухать"""
 	strings = {
-		"name": "Genshin"
+		"name": "GenshinTest"
 	}
 
 	async def client_ready(self, client, db):
@@ -16,7 +20,13 @@ class GenshinMod(loader.Module):
 
 	
 	@loader.owner
-	async def gicmd(self, message):
+	async def gi1cmd(self, message):
+		"""Злая Паймон: pai
+	Добрая Паймон: paim
+	Добрая Кли: klee
+	Диона со стаканом: diona
+	Цици "Понимаю": qiqi
+	Голодная Цици: qiqia""
 		clrs = {'klee1': 101, 'klee': 2, 'qiqi': 3, 'qiqia': 4, 'diona1': 105, 'diona': 1, 'paim': 5, 'pai': 6}
 		"""текст или реплай"""
 		clr = randint(1,6)
@@ -45,7 +55,7 @@ class GenshinMod(loader.Module):
 		url = "https://raw.githubusercontent.com/Vladimirlut/Genshin/main/"
 		font = ImageFont.truetype(BytesIO(get(url+"bold.ttf").content), 60)
 		imposter = Image.open(BytesIO(get(f"{url}{clr}.png").content))
-		text_ = "\n".join(["\n".join(wrap(part, 30)) for part in text.split("\n")])
+		text_ = "\n".join(["\n".join(wrap(part, 12)) for part in text.split("\n")])
 		w, h = ImageDraw.Draw(Image.new("RGB", (1,1))).multiline_textsize(text_, font, stroke_width=2)
 		text = Image.new("RGBA", (w+30, h+60))
 		ImageDraw.Draw(text).multiline_text((15,15), text_, "#FFF", font, stroke_width=2, stroke_fill="#000")
@@ -56,7 +66,7 @@ class GenshinMod(loader.Module):
 		image.paste(text, (w-text.width, 0), text)
 		image.thumbnail((512, 512))
 		output = BytesIO()
-		output.name = "genshin.webp"
+		output.name = "lolifromgenshin.webp"
 		image.save(output)
 		output.seek(0)
 		await message.delete()
@@ -67,4 +77,4 @@ async def bruh(message, user):
 	ln = user.last_name
 	name = fn + (" "+ln if ln else "")
 	name = "<b>"+name
-	await message.edit(name+choice([" ", " не "])+"был Паймон!</b>")
+	await message.edit(name+"не отправил текст! Ответь на текстовое сообщение, либо напиши после команды свой текст</b>")
