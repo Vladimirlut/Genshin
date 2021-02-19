@@ -26,7 +26,7 @@ class GenshinMod(loader.Module):
 	Добрая Кли: klee
 	Диона со стаканом: diona
 	Цици "Понимаю": qiqi
-	Голодная Цици: qiqia""
+	Голодная Цици: qiqia"""
 		clrs = {'klee1': 101, 'klee': 2, 'qiqi': 3, 'qiqia': 4, 'diona1': 105, 'diona': 1, 'paim': 5, 'pai': 6}
 		"""текст или реплай"""
 		clr = randint(1,6)
