@@ -23,13 +23,16 @@ class GenshinMod(loader.Module):
 	async def gicmd(self, message):
 		"""Злая Паймон: pai
 	Добрая Паймон: paim
+	Смущающаяся Паймон: paimm
 	Добрая Кли: klee
 	Диона со стаканом: diona
+	Просто Диона: dionaa
 	Цици "Понимаю": qiqi
-	Голодная Цици: qiqia"""
-		clrs = {'klee1': 101, 'klee': 2, 'qiqi': 3, 'qiqia': 4, 'diona1': 105, 'diona': 1, 'paim': 5, 'pai': 6}
+	Голодная Цици: qiqia
+	Записывающая Цици: qiqiq"""
+		clrs = {'klee1': 101, 'klee': 2, 'qiqi': 3, 'qiqia': 4, 'diona1': 105, 'diona': 1, 'paim': 5, 'pai': 6, 'paimm': 7, 'qiqiq': 8, 'dionaa': 9}
 		"""текст или реплай"""
-		clr = randint(1,6)
+		clr = randint(1,9)
 		text = utils.get_args_raw(message)
 		reply = await message.get_reply_message()
 		if text in clrs:
