@@ -27,7 +27,6 @@ class MicroQuotestMod(loader.Module):
 		if not pfp:
 			pfp = b'BM:\x00\x00\x00\x00\x00\x00\x006\x00\x00\x00(\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x18\x00\x00\x00\x00\x00\x04\x00\x00\x00\xc4\x0e\x00\x00\xc4\x0e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\x00'
 		text = "\n".join(textwrap.wrap(reply.raw_text, 30))
-		text = "“"+text+"„"
 		bf = requests.get("https://raw.githubusercontent.com/KeyZenD/l/master/times.ttf").content
 		font = ImageFont.truetype(io.BytesIO(bf), 50)
 		im = Image.open(io.BytesIO(pfp))
