@@ -30,10 +30,11 @@ class GenshinMod(loader.Module):
 	Просто Диона: dionaa
 	Цици "Понимаю": qiqi
 	Голодная Цици: qiqia
-	Записывающая Цици: qiqiq"""
-		clrs = {'klee1': 101, 'klee': 2, 'qiqi': 3, 'qiqia': 4, 'diona1': 105, 'diona': 1, 'paim': 5, 'pai': 6, 'paimm': 7, 'qiqiq': 8, 'dionaa': 9, 'kleea': 10}
+	Записывающая Цици: qiqiq
+        New: Саю: sayu"""
+		clrs = {'klee1': 101, 'klee': 2, 'qiqi': 3, 'qiqia': 4, 'diona1': 105, 'diona': 1, 'paim': 5, 'pai': 6, 'paimm': 7, 'qiqiq': 8, 'dionaa': 9, 'kleea': 10, 'sayu':11}
 		"""текст или реплай"""
-		clr = randint(1,10)
+		clr = randint(1,11)
 		text = utils.get_args_raw(message)
 		reply = await message.get_reply_message()
 		if text in clrs:
