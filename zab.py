@@ -40,7 +40,7 @@ class ZapomniZabudSoglMod(loader.Module):
 
 
 		await message.edit("<b>Вибачаюсь...</b>")
-		pic = requests.get("https://raw.githubusercontent.com/Vladimirlut/Genshin/blob/main/zap.jpg")
+		pic = requests.get("https://raw.githubusercontent.com/Vladimirlut/Genshin/main/zap.jpg")
 		pic.raw.decode_content = True
 		img = Image.open(io.BytesIO(pic.content)).convert("RGB")
 		black = Image.new("RGBA", img.size, (0, 0, 0, 100))
@@ -85,7 +85,7 @@ class ZapomniZabudSoglMod(loader.Module):
 			txt = utils.get_args_raw(message)
 
 		await message.edit("<b>Вибачаюсь...</b>")
-		pic = requests.get("https://raw.githubusercontent.com/Vladimirlut/Genshin/blob/main/zap.jpg")
+		pic = requests.get("https://raw.githubusercontent.com/Vladimirlut/Genshin/main/zap.jpg")
 		pic.raw.decode_content = True
 		img = Image.open(io.BytesIO(pic.content)).convert("RGB")
 		black = Image.new("RGBA", img.size, (0, 0, 0, 100))
@@ -130,7 +130,7 @@ class ZapomniZabudSoglMod(loader.Module):
 			txt = utils.get_args_raw(message)
 
 		await message.edit("<b>Вибачаюсь...</b>")
-		pic = requests.get("https://raw.githubusercontent.com/Vladimirlut/Genshin/blob/main/shrek.jpg")
+		pic = requests.get("https://raw.githubusercontent.com/Vladimirlut/Genshin/main/shrek.jpg")
 		pic.raw.decode_content = True
 		img = Image.open(io.BytesIO(pic.content)).convert("RGB")
 		black = Image.new("RGBA", img.size, (0, 0, 0, 100))
