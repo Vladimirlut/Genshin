@@ -25,7 +25,7 @@ class ZapomniZabudSoglMod(loader.Module):
 	async def zapcmd(self, message):
 		""".zap <текст чи реплай>"""
 		
-		ufr = requests.get("https://fl1yd.su/modules/stuff/font.ttf")
+		ufr = requests.get("https://github.com/Vladimirlut/Genshin/raw/main/font.ttf")
 		f = ufr.content
 		
 		reply = await message.get_reply_message()
@@ -40,7 +40,7 @@ class ZapomniZabudSoglMod(loader.Module):
 
 
 		await message.edit("<b>Вибачаюсь...</b>")
-		pic = requests.get("https://fl1yd.su/modules/stuff/man.jpg")
+		pic = requests.get("https://github.com/Vladimirlut/Genshin/blob/main/zap.jpg")
 		pic.raw.decode_content = True
 		img = Image.open(io.BytesIO(pic.content)).convert("RGB")
 		black = Image.new("RGBA", img.size, (0, 0, 0, 100))
@@ -71,7 +71,7 @@ class ZapomniZabudSoglMod(loader.Module):
 	async def zabcmd(self, message):
 		""".zab <текст чи реплай>"""
 
-		ufr = requests.get("https://fl1yd.su/modules/stuff/font.ttf")
+		ufr = requests.get("https://github.com/Vladimirlut/Genshin/raw/main/font.ttf")
 		f = ufr.content
 
 		reply = await message.get_reply_message()
@@ -85,7 +85,7 @@ class ZapomniZabudSoglMod(loader.Module):
 			txt = utils.get_args_raw(message)
 
 		await message.edit("<b>Вибачаюсь...</b>")
-		pic = requests.get("https://fl1yd.su/modules/stuff/man.jpg")
+		pic = requests.get("https://github.com/Vladimirlut/Genshin/blob/main/zap.jpg")
 		pic.raw.decode_content = True
 		img = Image.open(io.BytesIO(pic.content)).convert("RGB")
 		black = Image.new("RGBA", img.size, (0, 0, 0, 100))
@@ -116,7 +116,7 @@ class ZapomniZabudSoglMod(loader.Module):
 	async def soglcmd(self, message):
 		""".sogl <текст чи реплай>"""
 
-		ufr = requests.get("https://fl1yd.su/modules/stuff/font.ttf")
+		ufr = requests.get("https://github.com/Vladimirlut/Genshin/raw/main/font.ttf")
 		f = ufr.content
 
 		reply = await message.get_reply_message()
@@ -130,7 +130,7 @@ class ZapomniZabudSoglMod(loader.Module):
 			txt = utils.get_args_raw(message)
 
 		await message.edit("<b>Вибачаюсь...</b>")
-		pic = requests.get("https://fl1yd.su/modules/stuff/shrek.jpg")
+		pic = requests.get("https://github.com/Vladimirlut/Genshin/blob/main/shrek.jpg")
 		pic.raw.decode_content = True
 		img = Image.open(io.BytesIO(pic.content)).convert("RGB")
 		black = Image.new("RGBA", img.size, (0, 0, 0, 100))
