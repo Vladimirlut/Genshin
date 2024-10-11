@@ -43,7 +43,9 @@ class YouTubeDownloaderMod(loader.Module):
         """Завантажує відео з YouTube, використовуючи yt-dlp, вибираючи якість за лімітом 50 МБ"""
         ydl_opts = {
             'outtmpl': 'video.mp4',         # Ім'я вихідного файлу
-            'quiet': True
+            'quiet': True,
+            'username': 'oauth2',           # Використовуємо OAuth2 для авторизації
+            'password': '',                 # Порожній пароль для OAuth2
         }
 
         # Використання to_thread для запуску блокуючого коду
