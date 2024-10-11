@@ -53,34 +53,34 @@ class YouTubeDownloaderMod(loader.Module):
 
     def _select_and_download_video(self, url, ydl_opts):
         """Вибирає відповідний формат відео і завантажує його"""
+        preferred_qualities = [720, 480, 360]  # Якість відео, яку будемо пробувати
+    
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
     
             if info['duration'] > 300:  # Перевірка тривалості (до 5 хв)
                 raise Exception("Відео перевищує 5 хвилин")
     
-            # Отримуємо всі доступні формати і сортуємо за якістю
-            formats = sorted(info['formats'], key=lambda x: x.get('height', 0), reverse=True)
+            for quality in preferred_qualities:
+                # Отримуємо формати, які підходять за якістю
+                suitable_formats = [f for f in info['formats'] if f.get('height') == quality]
     
-            # Обираємо формат, який підходить за розміром
-            suitable_format = None
-            for f in formats:
-                filesize = f.get('filesize') or f.get('filesize_approx')  # Перевірка двох варіантів розміру
-                if filesize and filesize <= 50 * 1024 * 1024:  # Ліміт 50 МБ
-                    suitable_format = f
-                    break
+                # Сортуємо формати за розміром
+                for f in sorted(suitable_formats, key=lambda x: x.get('filesize') or x.get('filesize_approx') or 0):
+                    filesize = f.get('filesize') or f.get('filesize_approx')
     
-            if not suitable_format:
-                raise Exception("Не вдалося знайти формат, який відповідає ліміту 50 МБ")
+                    if filesize is None or filesize <= 50 * 1024 * 1024:  # Якщо файл підходить за розміром
+                        # Оновлюємо параметри для завантаження вибраного формату
+                        ydl_opts['format'] = f['format_id']
+                        
+                        # Завантажуємо відео
+                        with YoutubeDL(ydl_opts) as ydl:
+                            ydl.download([url])
+                        
+                        return 'video.mp4'
     
-            # Оновлюємо параметри для завантаження вибраного формату
-            ydl_opts['format'] = suitable_format['format_id']
-    
-            # Завантажуємо відео
-            with YoutubeDL(ydl_opts) as ydl:
-                ydl.download([url])
-    
-        return 'video.mp4'
+            # Якщо жоден формат не підходить
+            return None
 
 
     async def watcher(self, message):
