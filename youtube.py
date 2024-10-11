@@ -75,7 +75,7 @@ class YouTubeDownloaderMod(loader.Module):
             return
 
         # Шукаємо посилання на YouTube в повідомленні
-        yt_link_pattern = r'(https?://(?:www\.)?youtube\.com/watch\?v=[\w-]+|https?://youtu\.be/[\w-]+|https?://www\.youtube\.com/shorts/[\w-]+)'
+        yt_link_pattern = r'(https?://(?:www\.)?(?:youtube\.com/(?:watch\?v=|shorts/)|youtu\.be/)[\w-]+)'
         yt_links = re.findall(yt_link_pattern, message.text)
 
         if yt_links:
