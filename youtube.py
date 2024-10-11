@@ -40,48 +40,31 @@ class YouTubeDownloaderMod(loader.Module):
         await message.reply(f"Ця група тепер {action} для завантаження відео.")
 
     async def download_video(self, url):
-        """Завантажує відео з YouTube, використовуючи yt-dlp, вибираючи якість за лімітом 50 МБ"""
+        """Завантажує відео з YouTube, використовуючи yt-dlp"""
         ydl_opts = {
+            'format': 'mp4[height<=1080]',  # Формат відео з обмеженням якості до 1080p
             'outtmpl': 'video.mp4',         # Ім'я вихідного файлу
-            'quiet': True,
             'username': 'oauth2',           # Використовуємо OAuth2 для авторизації
             'password': '',                 # Порожній пароль для OAuth2
+            'max_filesize': 50 * 1024 * 1024,  # Обмеження на розмір відео (50 МБ)
+            'quiet': True,
+            'format_sort': ['+res:360', '+size']  # Сортування за роздільною здатністю і розміром
         }
 
         # Використання to_thread для запуску блокуючого коду
-        return await asyncio.to_thread(self._select_and_download_video, url, ydl_opts)
+        return await asyncio.to_thread(self._download_video, url, ydl_opts)
 
-    def _select_and_download_video(self, url, ydl_opts):
-        """Вибирає відповідний формат відео і завантажує його"""
-        preferred_qualities = [720, 480, 360]  # Якість відео, яку будемо пробувати
-    
+    def _download_video(self, url, ydl_opts):
+        """Внутрішній метод для завантаження відео, що викликається в окремому потоці"""
         with YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-    
+
             if info['duration'] > 300:  # Перевірка тривалості (до 5 хв)
                 raise Exception("Відео перевищує 5 хвилин")
-    
-            for quality in preferred_qualities:
-                # Отримуємо формати, які підходять за якістю
-                suitable_formats = [f for f in info['formats'] if f.get('height') == quality]
-    
-                # Сортуємо формати за розміром
-                for f in sorted(suitable_formats, key=lambda x: x.get('filesize') or x.get('filesize_approx') or 0):
-                    filesize = f.get('filesize') or f.get('filesize_approx')
-    
-                    if filesize is None or filesize <= 50 * 1024 * 1024:  # Якщо файл підходить за розміром
-                        # Оновлюємо параметри для завантаження вибраного формату
-                        ydl_opts['format'] = f['format_id']
-                        
-                        # Завантажуємо відео
-                        with YoutubeDL(ydl_opts) as ydl:
-                            ydl.download([url])
-                        
-                        return 'video.mp4'
-    
-            # Якщо жоден формат не підходить
-            return None
-
+            
+            # Завантаження відео
+            ydl.download([url])
+            return 'video.mp4'
 
     async def watcher(self, message):
         """Автоматичний завантажувач відео з YouTube"""
