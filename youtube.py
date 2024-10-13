@@ -48,7 +48,7 @@ class YouTubeDownloaderMod(loader.Module):
             'password': '',                 # Порожній пароль для OAuth2
             'max_filesize': 50 * 1024 * 1024,  # Обмеження на розмір відео (50 МБ)
             'quiet': True,
-            'format_sort': ['+res:360', '+size']  # Сортування за роздільною здатністю і розміром
+            'format_sort': ['+res:480', '+size']  # Сортування за роздільною здатністю і розміром
         }
 
         # Використання to_thread для запуску блокуючого коду
