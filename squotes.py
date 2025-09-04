@@ -102,7 +102,7 @@ class ShitQuotesMod(loader.Module):
     async def client_ready(self, client: telethon.TelegramClient, db: dict):
         self.client = client
         self.db = db
-        self.api_endpoint = "https://quotes.fl1yd.su/generate"
+        self.api_endpoint = "https://quotes.fl1yd.me/generate"
         self.settings = self.get_settings()
 
 
@@ -504,4 +504,5 @@ class ShitQuotesMod(loader.Module):
 
     async def _api_request(self, data: dict):
         return await utils.run_sync(
+
             requests.post, self.api_endpoint, json = data)
