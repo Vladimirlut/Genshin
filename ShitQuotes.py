@@ -223,11 +223,16 @@ class ShitQuotesMod(loader.Module):
                 if reply := await message.get_reply_message():
                     reply_id = reply.sender.id
                     reply_name = telethon.utils.get_display_name(reply.sender)
-                    reply_text = get_message_text(reply, True) + (
-                        ". " + reply.raw_text
-                        if reply.raw_text and get_message_text(reply, True)
-                        else reply.raw_text or ""
-                    )
+                    
+                    # Перевіряємо, чи це цитата конкретної частини тексту
+                    if hasattr(message, 'reply_to') and message.reply_to and hasattr(message.reply_to, 'quote_text') and message.reply_to.quote_text:
+                        reply_text = message.reply_to.quote_text
+                    else:
+                        reply_text = get_message_text(reply, True) + (
+                            ". " + reply.raw_text
+                            if reply.raw_text and get_message_text(reply, True)
+                            else reply.raw_text or ""
+                        )
 
                 user = await self.client.get_entity(message.sender)
                 name, avatar = await self.get_profile_data(user)
