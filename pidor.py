@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# Module author: @ВашНік (або залиште порожнім)
-
 from .. import loader, utils
 import random
 import asyncio
@@ -9,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 
 @loader.tds
 class PidorBotMod(loader.Module):
-    """Модуль для гри 'Красавчик' та 'Підор' дня з повною статистикою"""
+    """Модуль для гри 'Красавчик' та 'Підор' дня з повною статистикою (Окремі повідомлення)"""
 
     strings = {"name": "PidorBot"}
 
@@ -129,36 +127,30 @@ class PidorBotMod(loader.Module):
         if chat_id not in stats_data:
             stats_data[chat_id] = {}
 
-        if message.out:
-            target_message = message
-        else:
-            target_message = await message.respond("<b>Запуск...</b>")
-
-        # Перевірка на сьогодні
+        # Перевірка на сьогодні (якщо вже грали - просто видаємо результат без затримок)
         if daily_data[chat_id].get("date") == today and role in daily_data[chat_id]:
             winner_text = daily_data[chat_id][role]
             emoji = "🎉" if role == "handsome" else "🌈"
             title = "красавчик" if role == "handsome" else "ПІДОР"
             final_text = f"<b>{emoji} Сьогодні {title} дня - {winner_text}</b>"
-            await target_message.edit(final_text)
+            await message.respond(final_text)
             return
 
         # Учасники
         try:
             users = await message.client.get_participants(message.chat_id)
         except Exception:
-            await target_message.edit("<b>Не вдалося отримати список учасників.</b>")
+            await message.respond("<b>Не вдалося отримати список учасників. Можливо, це не група.</b>")
             return
             
         valid_users = [u for u in users if not u.bot and not u.deleted]
         if not valid_users:
-            await target_message.edit("<b>В чаті немає підходящих гравців!</b>")
+            await message.respond("<b>В чаті немає підходящих гравців!</b>")
             return
 
         winner = random.choice(valid_users)
         name = (winner.first_name + (f" {winner.last_name}" if winner.last_name else "")).replace("<", "").replace(">", "")
         username = f"(@{winner.username})" if winner.username else ""
-        # Робимо посилання через ID
         user_mention = f"<a href='tg://user?id={winner.id}'>{name}</a> {username}"
 
         phrases_pool = self.handsome_phrases if role == "handsome" else self.pidor_phrases
@@ -167,33 +159,36 @@ class PidorBotMod(loader.Module):
         if daily_data[chat_id].get("date") != today:
             daily_data[chat_id] = {"date": today}
 
-        # Анімація
+        # Відправка мемних фраз окремими повідомленнями
         for i, phrase in enumerate(selected_phrases):
-            await target_message.edit(f"<b>{5-i} - {phrase}</b>")
-            await asyncio.sleep(2)
+            await message.respond(f"<b>{5-i} - {phrase}</b>")
+            await asyncio.sleep(2) # Затримка між повідомленнями
 
         emoji = "🎉" if role == "handsome" else "🌈"
         title = "красавчик" if role == "handsome" else "ПІДОР"
         final_text = f"<b>{emoji} Сьогодні {title} дня - {user_mention}</b>"
 
-        # Збереження
+        # Збереження результату дня
         daily_data[chat_id][role] = user_mention
         self.db.set("PidorBot", "daily_data", daily_data)
 
+        # Збереження статистики
         winner_id = str(winner.id)
         if winner_id not in stats_data[chat_id]:
             stats_data[chat_id][winner_id] = {"handsome": 0, "pidor": 0, "name": name}
 
         stats_data[chat_id][winner_id][role] += 1
-        stats_data[chat_id][winner_id]["name"] = name # Оновлюємо ім'я в статі про всяк випадок
+        stats_data[chat_id][winner_id]["name"] = name
         self.db.set("PidorBot", "stats_data", stats_data)
 
-        await target_message.edit(final_text)
+        # Фінальне повідомлення
+        await message.respond(final_text)
 
     async def _stats_logic(self, message):
         chat_id = str(message.chat_id)
         stats_data = self.db.get("PidorBot", "stats_data", {})
 
+        # Для статистики залишимо редагування свого повідомлення, якщо викликав власник
         if message.out:
             target_message = message
         else:
