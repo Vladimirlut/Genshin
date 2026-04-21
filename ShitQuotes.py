@@ -105,21 +105,23 @@ class ShitQuotesMod(loader.Module):
         self.api_endpoint = "http://193.123.64.247:8000/generate"
         self.settings = self.get_settings()
 
-
+    @loader.unrestricted
     async def qcmd(self, message: types.Message):
         """
         Скорочення команди .sq
         """
 
         return await self.sqcmd(message)
-    
+
+    @loader.unrestricted
     async def quotecmd(self, message: types.Message):
         """
         Скорочення команди .sq
         """
 
         return await self.sqcmd(message)
-    
+
+    @loader.unrestricted
     async def fquotecmd(self, message: types.Message):
         """
         Скорочення команди .sq
@@ -127,7 +129,7 @@ class ShitQuotesMod(loader.Module):
 
         return await self.fsqcmd(message)
 
-
+    @loader.unrestricted
     async def sqcmd(self, message: Message):
         """
         Використовування:
@@ -283,7 +285,7 @@ class ShitQuotesMod(loader.Module):
 
         return payloads
 
-
+    @loader.unrestricted
     async def fsqcmd(self, message: Message):
         """
         Використовування:
