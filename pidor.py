@@ -14,6 +14,9 @@ class PidorBotMod(loader.Module):
     strings = {"name": "PidorBot"}
 
     def __init__(self):
+        # Сет для блокування одночасного запуску команд у чаті
+        self.running_games = set()
+        
         # 100 фраз для красавчика
         self.handsome_phrases = [
             "Дивимося аніме...",
@@ -139,72 +142,84 @@ class PidorBotMod(loader.Module):
 
     async def _find_hero(self, message, role):
         chat_id = str(message.chat_id)
-        today = self._get_kyiv_date()
+        lock_key = f"{chat_id}_{role}"
 
-        daily_data = self.db.get("PidorBot", "daily_data", {})
-        stats_data = self.db.get("PidorBot", "stats_data", {})
+        # Перевіряємо, чи вже йде пошук у цьому чаті для цієї ролі
+        if lock_key in self.running_games:
+            return # Просто ігноруємо команду, щоб не спамити
 
-        if chat_id not in daily_data:
-            daily_data[chat_id] = {}
-        if chat_id not in stats_data:
-            stats_data[chat_id] = {}
+        # Ставимо "замок"
+        self.running_games.add(lock_key)
 
-        # Перевірка на сьогодні
-        if daily_data[chat_id].get("date") == today and role in daily_data[chat_id]:
-            winner_text = daily_data[chat_id][role]
+        try:
+            today = self._get_kyiv_date()
+            daily_data = self.db.get("PidorBot", "daily_data", {})
+            stats_data = self.db.get("PidorBot", "stats_data", {})
+
+            if chat_id not in daily_data:
+                daily_data[chat_id] = {}
+            if chat_id not in stats_data:
+                stats_data[chat_id] = {}
+
+            # Перевірка на сьогодні
+            if daily_data[chat_id].get("date") == today and role in daily_data[chat_id]:
+                winner_text = daily_data[chat_id][role]
+                emoji = "🎉" if role == "handsome" else "🌈"
+                title = "красавчик" if role == "handsome" else "ПІДОР"
+                final_text = f"<b>{emoji} Сьогодні {title} дня - {winner_text}</b>"
+                await message.respond(final_text)
+                return
+
+            # Учасники
+            try:
+                users = await message.client.get_participants(message.chat_id)
+            except Exception:
+                await message.respond("<b>Не вдалося отримати список учасників.</b>")
+                return
+                
+            valid_users = [u for u in users if not u.bot and not u.deleted]
+            if not valid_users:
+                await message.respond("<b>В чаті немає підходящих гравців!</b>")
+                return
+
+            winner = random.choice(valid_users)
+            name = (winner.first_name + (f" {winner.last_name}" if winner.last_name else "")).replace("<", "").replace(">", "")
+            username = f"(@{winner.username})" if winner.username else ""
+            user_mention = f"<a href='tg://user?id={winner.id}'>{name}</a> {username}"
+
+            phrases_pool = self.handsome_phrases if role == "handsome" else self.pidor_phrases
+            selected_phrases = random.sample(phrases_pool, 5)
+
+            if daily_data[chat_id].get("date") != today:
+                daily_data[chat_id] = {"date": today}
+
+            # Відправляємо кожну фразу новим повідомленням
+            for i, phrase in enumerate(selected_phrases):
+                await message.respond(f"<b>{5-i} - {phrase}</b>")
+                await asyncio.sleep(2)
+
             emoji = "🎉" if role == "handsome" else "🌈"
             title = "красавчик" if role == "handsome" else "ПІДОР"
-            final_text = f"<b>{emoji} Сьогодні {title} дня - {winner_text}</b>"
+            final_text = f"<b>{emoji} Сьогодні {title} дня - {user_mention}</b>"
+
+            # Збереження
+            daily_data[chat_id][role] = user_mention
+            self.db.set("PidorBot", "daily_data", daily_data)
+
+            winner_id = str(winner.id)
+            if winner_id not in stats_data[chat_id]:
+                stats_data[chat_id][winner_id] = {"handsome": 0, "pidor": 0, "name": name}
+
+            stats_data[chat_id][winner_id][role] += 1
+            stats_data[chat_id][winner_id]["name"] = name
+            self.db.set("PidorBot", "stats_data", stats_data)
+
+            # Відправляємо фінальне повідомлення
             await message.respond(final_text)
-            return
 
-        # Учасники
-        try:
-            users = await message.client.get_participants(message.chat_id)
-        except Exception:
-            await message.respond("<b>Не вдалося отримати список учасників.</b>")
-            return
-            
-        valid_users = [u for u in users if not u.bot and not u.deleted]
-        if not valid_users:
-            await message.respond("<b>В чаті немає підходящих гравців!</b>")
-            return
-
-        winner = random.choice(valid_users)
-        name = (winner.first_name + (f" {winner.last_name}" if winner.last_name else "")).replace("<", "").replace(">", "")
-        username = f"(@{winner.username})" if winner.username else ""
-        # Робимо посилання через ID
-        user_mention = f"<a href='tg://user?id={winner.id}'>{name}</a> {username}"
-
-        phrases_pool = self.handsome_phrases if role == "handsome" else self.pidor_phrases
-        selected_phrases = random.sample(phrases_pool, 5)
-
-        if daily_data[chat_id].get("date") != today:
-            daily_data[chat_id] = {"date": today}
-
-        # Відправляємо кожну фразу новим повідомленням
-        for i, phrase in enumerate(selected_phrases):
-            await message.respond(f"<b>{5-i} - {phrase}</b>")
-            await asyncio.sleep(2)
-
-        emoji = "🎉" if role == "handsome" else "🌈"
-        title = "красавчик" if role == "handsome" else "ПІДОР"
-        final_text = f"<b>{emoji} Сьогодні {title} дня - {user_mention}</b>"
-
-        # Збереження
-        daily_data[chat_id][role] = user_mention
-        self.db.set("PidorBot", "daily_data", daily_data)
-
-        winner_id = str(winner.id)
-        if winner_id not in stats_data[chat_id]:
-            stats_data[chat_id][winner_id] = {"handsome": 0, "pidor": 0, "name": name}
-
-        stats_data[chat_id][winner_id][role] += 1
-        stats_data[chat_id][winner_id]["name"] = name # Оновлюємо ім'я в статі про всяк випадок
-        self.db.set("PidorBot", "stats_data", stats_data)
-
-        # Відправляємо фінальне повідомлення
-        await message.respond(final_text)
+        finally:
+            # Знімаємо "замок", незалежно від того, як завершився код (з помилкою чи без)
+            self.running_games.discard(lock_key)
 
     async def _stats_logic(self, message):
         chat_id = str(message.chat_id)
