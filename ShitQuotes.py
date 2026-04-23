@@ -223,8 +223,10 @@ class ShitQuotesMod(loader.Module):
                     user_id = message.chat_id
             else:
                 if reply := await message.get_reply_message():
-                    reply_id = reply.sender.id
-                    reply_name = telethon.utils.get_display_name(reply.sender)
+                    # Запобіжник для реплаю, якщо автора не знайдено
+                    reply_sender = reply.sender or reply.chat
+                    reply_id = reply_sender.id if reply_sender else 0
+                    reply_name = telethon.utils.get_display_name(reply_sender) if reply_sender else "Anonymous"
                     
                     # Перевіряємо, чи це цитата конкретної частини тексту
                     if hasattr(message, 'reply_to') and message.reply_to and hasattr(message.reply_to, 'quote_text') and message.reply_to.quote_text:
@@ -236,15 +238,26 @@ class ShitQuotesMod(loader.Module):
                             else reply.raw_text or ""
                         )
 
-                user = await self.client.get_entity(message.sender)
-                name, avatar = await self.get_profile_data(user)
-                user_id = user.id
+                # Запобіжник для основного повідомлення (якщо анонімний адмін або від імені групи)
+                sender = message.sender or message.chat
+                if sender:
+                    user = await self.client.get_entity(sender)
+                    name, avatar = await self.get_profile_data(user)
+                    user_id = user.id
+                else:
+                    user = None
+                    name = "Anonymous"
+                    avatar = None
+                    user_id = 0
 
-                if message.is_group and message.is_channel:
-                    admins = await self.client.get_participants(message.chat_id, filter = types.ChannelParticipantsAdmins)
-                    if user in admins:
-                        admin = admins[admins.index(user)].participant
-                        rank = admin.rank or ("creator" if type(admin) == types.ChannelParticipantCreator else "admin")
+                if user and message.is_group and message.is_channel:
+                    try:
+                        admins = await self.client.get_participants(message.chat_id, filter = types.ChannelParticipantsAdmins)
+                        if user in admins:
+                            admin = admins[admins.index(user)].participant
+                            rank = admin.rank or ("creator" if type(admin) == types.ChannelParticipantCreator else "admin")
+                    except Exception:
+                        pass # Ігноруємо помилку, якщо не вдалося перевірити адмінів
 
             media = await self.client.download_media(get_message_media(message), bytes, thumb = -1)
             media = base64.b64encode(media).decode() if media else None
