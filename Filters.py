@@ -103,9 +103,27 @@ class FiltersMod(loader.Module):
         await message.edit(
             f"<b>List of filters in this chat: {len(filters[chatid])}\n\n{msg}</b>"
         )
+        
+    async def tfilterscmd(self, message):
+        """Toggles the filters module on or off globally."""
+        # Отримуємо поточний статус (за замовчуванням True, тобто увімкнено)
+        status = self.db.get("Filters", "status", True)
+        
+        # Інвертуємо статус та зберігаємо його
+        new_status = not status
+        self.db.set("Filters", "status", new_status)
+        
+        if new_status:
+            await message.edit("<b>Filters module enabled globally!</b>")
+        else:
+            await message.edit("<b>Filters module disabled globally!</b>")
 
     async def watcher(self, message):
         try:
+            # Перевіряємо чи увімкнений модуль. Якщо ні - одразу виходимо з функції
+            if not self.db.get("Filters", "status", True):
+                return
+                
             filters = self.db.get("Filters", "filters", {})
             chatid = str(message.chat_id)
             m = message.text.lower()
@@ -116,7 +134,6 @@ class FiltersMod(loader.Module):
                 msg = await self.db.fetch_asset(filters[chatid][_])
                 def_pref = self.db.get("friendly-telegram.main", "command_prefix")
                 pref = "." if not def_pref else def_pref[0]
-
 
                 if random.randrange(5) == 1:
                     if len(_.split()) == 1:
