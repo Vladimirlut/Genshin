@@ -2,7 +2,6 @@
 # Thank for.... - no1!!, no1 helped us, we did everything ourselves
 # But we took one method of get messages from the Mishase's and Droox's modules
 
-
 import io
 import json
 import base64
@@ -18,7 +17,6 @@ from time import gmtime
 from .. import loader, utils
 
 
-
 def get_message_media(message: Message):
     data = None
     if message and message.media:
@@ -27,7 +25,6 @@ def get_message_media(message: Message):
 
 
 def get_entities(entities: types.TypeMessageEntity):
-    # coded by @droox
     r = []
     if entities:
         for entity in entities:
@@ -78,7 +75,6 @@ def strftime(time: Union[int, float]):
             else ""
         ) + f"{t.tm_min:02d}:{t.tm_sec:02d}"
     )
-        
 
 
 @loader.tds
@@ -104,29 +100,22 @@ class ShitQuotesMod(loader.Module):
         self.db = db
         self.api_endpoint = "http://193.123.64.247:8000/generate"
         self.settings = self.get_settings()
+        self.me = await client.get_me()
+        self.is_bot = self.me.bot
 
     @loader.unrestricted
     async def qcmd(self, message: types.Message):
-        """
-        Скорочення команди .sq
-        """
-
+        """Скорочення команди .sq"""
         return await self.sqcmd(message)
 
     @loader.unrestricted
     async def quotecmd(self, message: types.Message):
-        """
-        Скорочення команди .sq
-        """
-
+        """Скорочення команди .sq"""
         return await self.sqcmd(message)
 
     @loader.unrestricted
     async def fquotecmd(self, message: types.Message):
-        """
-        Скорочення команди .sq
-        """
-
+        """Скорочення команди .sq"""
         return await self.fsqcmd(message)
 
     @loader.unrestricted
@@ -140,14 +129,11 @@ class ShitQuotesMod(loader.Module):
         >>> .sq red
         >>> .sq !file
         """
-
         args: List[str] = utils.get_args(message)
         if not await message.get_reply_message():
-            return await utils.answer(
-                message, self.strings["no_reply"])
+            return await utils.answer(message, self.strings["no_reply"])
 
-        m = await utils.answer(
-            message, self.strings["processing"])
+        m = await utils.answer(message, self.strings["processing"])
 
         isFile = "!file" in args
         [count] = [int(arg) for arg in args if arg.isdigit() and int(arg) > 0] or [1]
@@ -155,8 +141,7 @@ class ShitQuotesMod(loader.Module):
 
         if count > self.settings["max_messages"]:
             return await utils.answer(
-                m, self.strings["too_many_messages"].format(
-                    self.settings["max_messages"])
+                m, self.strings["too_many_messages"].format(self.settings["max_messages"])
             )
 
         payload = {
@@ -167,70 +152,82 @@ class ShitQuotesMod(loader.Module):
 
         if self.settings["debug"]:
             file = open("SQuotesDebug.json", "w")
-            json.dump(
-                payload, file, indent = 4,
-                ensure_ascii = False,
-            )
-            await message.respond(
-                file = file.name)
+            json.dump(payload, file, indent=4, ensure_ascii=False)
+            await message.respond(file=file.name)
 
-        await utils.answer(
-            m, self.strings["api_processing"])
+        await utils.answer(m, self.strings["api_processing"])
 
         r = await self._api_request(payload)
         if r.status_code != 200:
-            return await utils.answer(
-                m, self.strings["api_error"])
+            return await utils.answer(m, self.strings["api_error"])
 
         quote = io.BytesIO(r.content)
         quote.name = "SQuote" + (".png" if isFile else ".webp")
 
-        await utils.answer(m, quote, force_document = isFile)
-        return await m[-1].delete()
+        await utils.answer(m, quote, force_document=isFile)
+        if not self.is_bot:
+            try:
+                return await m[-1].delete()
+            except:
+                pass
 
 
     async def quote_parse_messages(self, message: Message, count: int):
         payloads = []
-        messages = [
-            msg async for msg in self.client.iter_messages(
-                message.chat_id, count, reverse = True, add_offset = 1,
-                offset_id = (await message.get_reply_message()).id,
-            )
-        ]
+        messages = []
 
-        for message in messages:
-            avatar = rank = reply_id = reply_name = reply_text = None
-            entities = get_entities(message.entities)
-
-            if message.fwd_from:
-                if message.fwd_from.from_id:
-                    if type(message.fwd_from.from_id) == types.PeerChannel:
-                        user_id = message.fwd_from.from_id.channel_id
+        if not self.is_bot:
+            # Юзербот має доступ до ітерації історії
+            messages = [
+                msg async for msg in self.client.iter_messages(
+                    message.chat_id, count, reverse=True, add_offset=1,
+                    offset_id=(await message.get_reply_message()).id,
+                )
+            ]
+        else:
+            # Бот збирає повідомлення ланцюжком реплаїв
+            current_msg = await message.get_reply_message()
+            if current_msg:
+                messages.append(current_msg)
+                while len(messages) < count and current_msg.reply_to_msg_id:
+                    current_msg = await current_msg.get_reply_message()
+                    if current_msg:
+                        messages.append(current_msg)
                     else:
-                        user_id = message.fwd_from.from_id.user_id
+                        break
+            messages.reverse() # Повертаємо у хронологічному порядку
+
+        for msg in messages:
+            avatar = rank = reply_id = reply_name = reply_text = None
+            entities = get_entities(msg.entities)
+
+            if msg.fwd_from:
+                if msg.fwd_from.from_id:
+                    if type(msg.fwd_from.from_id) == types.PeerChannel:
+                        user_id = msg.fwd_from.from_id.channel_id
+                    else:
+                        user_id = msg.fwd_from.from_id.user_id
                     try:
                         user = await self.client.get_entity(user_id)
                     except Exception:
-                        name, avatar = await self.get_profile_data(message.sender)
+                        name, avatar = await self.get_profile_data(msg.sender)
                         return (
                             "Га-га! Помилка! Можливо на цьому каналі тебе забанили, та неможливо отримати інформацію.",
-                            None, message.sender.id, name, avatar, "помилка :(", None, None, None, None
+                            None, msg.sender.id if msg.sender else 0, name, avatar, "помилка :(", None, None, None, None
                         )
                     name, avatar = await self.get_profile_data(user)
                     user_id = user.id
 
-                elif name := message.fwd_from.from_name:
-                    user_id = message.chat_id
+                elif name := msg.fwd_from.from_name:
+                    user_id = msg.chat_id
             else:
-                if reply := await message.get_reply_message():
-                    # Запобіжник для реплаю, якщо автора не знайдено
+                if reply := await msg.get_reply_message():
                     reply_sender = reply.sender or reply.chat
                     reply_id = reply_sender.id if reply_sender else 0
                     reply_name = telethon.utils.get_display_name(reply_sender) if reply_sender else "Anonymous"
                     
-                    # Перевіряємо, чи це цитата конкретної частини тексту
-                    if hasattr(message, 'reply_to') and message.reply_to and hasattr(message.reply_to, 'quote_text') and message.reply_to.quote_text:
-                        reply_text = message.reply_to.quote_text
+                    if hasattr(msg, 'reply_to') and msg.reply_to and hasattr(msg.reply_to, 'quote_text') and msg.reply_to.quote_text:
+                        reply_text = msg.reply_to.quote_text
                     else:
                         reply_text = get_message_text(reply, True) + (
                             ". " + reply.raw_text
@@ -238,39 +235,45 @@ class ShitQuotesMod(loader.Module):
                             else reply.raw_text or ""
                         )
 
-                # Запобіжник для основного повідомлення (якщо анонімний адмін або від імені групи)
-                sender = message.sender or message.chat
+                sender = msg.sender or msg.chat
                 if sender:
-                    user = await self.client.get_entity(sender)
-                    name, avatar = await self.get_profile_data(user)
-                    user_id = user.id
+                    try:
+                        user = await self.client.get_entity(sender)
+                        name, avatar = await self.get_profile_data(user)
+                        user_id = user.id
+                    except Exception:
+                        user = None
+                        name = telethon.utils.get_display_name(sender) if sender else "Anonymous"
+                        avatar = None
+                        user_id = sender.id if sender else 0
                 else:
                     user = None
                     name = "Anonymous"
                     avatar = None
                     user_id = 0
 
-                if user and message.is_group and message.is_channel:
+                # Отримуємо адмінів, якщо це група і ми маємо права (або ми не бот)
+                if user and msg.is_group and msg.is_channel:
                     try:
-                        admins = await self.client.get_participants(message.chat_id, filter = types.ChannelParticipantsAdmins)
+                        admins = await self.client.get_participants(msg.chat_id, filter=types.ChannelParticipantsAdmins)
                         if user in admins:
                             admin = admins[admins.index(user)].participant
                             rank = admin.rank or ("creator" if type(admin) == types.ChannelParticipantCreator else "admin")
                     except Exception:
-                        pass # Ігноруємо помилку, якщо не вдалося перевірити адмінів
+                        pass # Боти часто не мають права читати список адмінів
 
-            media = await self.client.download_media(get_message_media(message), bytes, thumb = -1)
+            media = await self.client.download_media(get_message_media(msg), bytes, thumb=-1)
             media = base64.b64encode(media).decode() if media else None
 
-            via_bot = message.via_bot.username if message.via_bot else None
+            via_bot = msg.via_bot.username if msg.via_bot else None
             text = (
-                (message.raw_text or "") + (
+                (msg.raw_text or "") + (
                     (
-                        "\n\n" + get_message_text(message)
-                        if message.raw_text
-                        else get_message_text(message)
+                        "\n\n" + get_message_text(msg)
+                        if msg.raw_text
+                        else get_message_text(msg)
                     )
-                    if get_message_text(message)
+                    if get_message_text(msg)
                     else ""
                 )
             )
@@ -279,7 +282,7 @@ class ShitQuotesMod(loader.Module):
                 {
                     "text": text,
                     "media": media,
-                    "is_video": bool(message.video or message.video_note or message.gif),
+                    "is_video": bool(msg.video or msg.video_note or msg.gif),
                     "entities": entities,
                     "author": {
                         "id": user_id,
@@ -328,14 +331,12 @@ class ShitQuotesMod(loader.Module):
             payload = await self.fakequote_parse_messages(args, reply)
         except (IndexError, ValueError):
             return await utils.answer(
-                m, self.strings["args_error"].format(
-                    message.text)
+                m, self.strings["args_error"].format(message.text)
             )
 
         if len(payload) > self.settings["max_messages"]:
             return await utils.answer(
-                m, self.strings["too_many_messages"].format(
-                    self.settings["max_messages"])
+                m, self.strings["too_many_messages"].format(self.settings["max_messages"])
             ) 
 
         payload = {
@@ -346,26 +347,25 @@ class ShitQuotesMod(loader.Module):
 
         if self.settings["debug"]:
             file = open("SQuotesDebug.json", "w")
-            json.dump(
-                payload, file, indent = 4,
-                ensure_ascii = False,
-            )
-            await message.respond(
-                file = file.name)
+            json.dump(payload, file, indent=4, ensure_ascii=False)
+            await message.respond(file=file.name)
 
-        await utils.answer(
-            m, self.strings["api_processing"])
+        await utils.answer(m, self.strings["api_processing"])
 
         r = await self._api_request(payload)
         if r.status_code != 200:
-            return await utils.answer(
-                m, self.strings["api_error"])
+            return await utils.answer(m, self.strings["api_error"])
 
         quote = io.BytesIO(r.content)
         quote.name = "SQuote.webp"
 
         await utils.answer(m, quote)
-        return await m[-1].delete()
+        
+        if not self.is_bot:
+            try:
+                return await m[-1].delete()
+            except:
+                pass
 
 
     async def fakequote_parse_messages(self, args: str, reply: Message):
@@ -378,7 +378,7 @@ class ShitQuotesMod(loader.Module):
                 user = await self.client.get_entity(
                     int(args) if args.isdigit() else args)
             else:
-                text = args.split(maxsplit = 1)[1]
+                text = args.split(maxsplit=1)[1]
             return user, text
 
         if reply or reply and args:
@@ -444,10 +444,15 @@ class ShitQuotesMod(loader.Module):
         ]
 
 
-    async def get_profile_data(self, user: types.User):
-        avatar = await self.client.download_profile_photo(user.id, bytes)
-        return telethon.utils.get_display_name(user), \
-            base64.b64encode(avatar).decode() if avatar else None
+    async def get_profile_data(self, user):
+        if not user:
+            return "Anonymous", None
+        try:
+            avatar = await self.client.download_profile_photo(user.id if hasattr(user, 'id') else user, bytes)
+            return telethon.utils.get_display_name(user), \
+                base64.b64encode(avatar).decode() if avatar else None
+        except Exception:
+            return telethon.utils.get_display_name(user) if hasattr(user, 'title') or hasattr(user, 'first_name') else "User", None
 
 
     async def sqsetcmd(self, message: Message):
@@ -459,7 +464,7 @@ class ShitQuotesMod(loader.Module):
         >>> .sqset debug true
         """
 
-        args: List[str] = utils.get_args_raw(message).split(maxsplit = 1)
+        args: List[str] = utils.get_args_raw(message).split(maxsplit=1)
         if not args:
             return await utils.answer(
                 message,
@@ -525,5 +530,4 @@ class ShitQuotesMod(loader.Module):
 
     async def _api_request(self, data: dict):
         return await utils.run_sync(
-
-            requests.post, self.api_endpoint, json = data)
+            requests.post, self.api_endpoint, json=data)
