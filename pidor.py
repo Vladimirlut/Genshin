@@ -4,7 +4,7 @@
 
 from .. import loader, utils
 import random
-import asynci
+import asyncio
 import json
 import io
 from datetime import datetime, timedelta, timezone
