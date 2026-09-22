@@ -4,7 +4,9 @@
 
 from .. import loader, utils
 import random
-import asyncio
+import asynci
+import json
+import io
 from datetime import datetime, timedelta, timezone
 
 @loader.tds
@@ -156,6 +158,76 @@ class PidorBotMod(loader.Module):
         """Статистика чату"""
         await self._stats_logic(message)
 
+    async def pidorexportcmd(self, message):
+        """Експорт бази даних. Використання: .pidorexport [айді_чату] (за замовчуванням поточний)"""
+        args = utils.get_args_raw(message)
+        chat_id = args.strip() if args else str(message.chat_id)
+
+        daily_data = self.db.get("PidorBot", "daily_data", {})
+        stats_data = self.db.get("PidorBot", "stats_data", {})
+
+        export_data = {
+            "daily": daily_data.get(chat_id, {}),
+            "stats": stats_data.get(chat_id, {})
+        }
+
+        if not export_data["daily"] and not export_data["stats"]:
+            await utils.answer(message, f"<b>📦 Немає даних для чату <code>{chat_id}</code></b>")
+            return
+
+        # Створюємо файл у пам'яті
+        file = io.BytesIO(json.dumps(export_data, ensure_ascii=False, indent=4).encode('utf-8'))
+        file.name = f"pidor_db_{chat_id}.json"
+
+        # Відправляємо файл
+        await message.client.send_file(
+            message.chat_id,
+            file,
+            caption=f"<b>📦 База даних гри для чату <code>{chat_id}</code></b>",
+            reply_to=message.reply_to_msg_id
+        )
+        if message.out:
+            await message.delete()
+
+    
+    async def pidorimportcmd(self, message):
+        """Імпорт бази даних. Використання: реплай на файл .pidorimport [айді_чату] (за замовчуванням поточний)"""
+        args = utils.get_args_raw(message)
+        chat_id = args.strip() if args else str(message.chat_id)
+
+        reply = await message.get_reply_message()
+        if not reply or not reply.document:
+            await utils.answer(message, "<b>⚠️ Зробіть реплай на .json файл з базою даних!</b>")
+            return
+
+        if message.out:
+            await message.edit("<b>Завантаження бази...</b>")
+        else:
+            message = await message.respond("<b>Завантаження бази...</b>")
+
+        # Завантажуємо файл і читаємо JSON
+        doc = await reply.download_media(bytes)
+        try:
+            import_data = json.loads(doc.decode('utf-8'))
+        except Exception:
+            await utils.answer(message, "<b>❌ Помилка читання файлу! Це не валідний JSON.</b>")
+            return
+
+        if "daily" not in import_data or "stats" not in import_data:
+            await utils.answer(message, "<b>❌ Невірний формат бази даних!</b>")
+            return
+
+        # Отримуємо поточну базу і перезаписуємо/додаємо дані для вказаного чату
+        daily_data = self.db.get("PidorBot", "daily_data", {})
+        stats_data = self.db.get("PidorBot", "stats_data", {})
+
+        daily_data[chat_id] = import_data["daily"]
+        stats_data[chat_id] = import_data["stats"]
+
+        self.db.set("PidorBot", "daily_data", daily_data)
+        self.db.set("PidorBot", "stats_data", stats_data)
+
+        await utils.answer(message, f"<b>✅ Базу для чату <code>{chat_id}</code> успішно імпортовано!</b>")
     async def _find_hero(self, message, role):
         chat_id = str(message.chat_id)
         lock_key = f"{chat_id}_{role}"
