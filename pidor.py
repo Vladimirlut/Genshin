@@ -6,6 +6,7 @@ from .. import loader, utils
 import random
 import asyncio
 import json
+import copy
 import io
 from datetime import datetime, timedelta, timezone
 
@@ -201,33 +202,40 @@ class PidorBotMod(loader.Module):
             return
 
         if message.out:
-            await message.edit("<b>Завантаження бази...</b>")
+            target_message = await message.edit("<b>Завантаження бази...</b>")
         else:
-            message = await message.respond("<b>Завантаження бази...</b>")
+            target_message = await message.respond("<b>Завантаження бази...</b>")
 
-        # Завантажуємо файл і читаємо JSON
         doc = await reply.download_media(bytes)
         try:
             import_data = json.loads(doc.decode('utf-8'))
         except Exception:
-            await utils.answer(message, "<b>❌ Помилка читання файлу! Це не валідний JSON.</b>")
+            await target_message.edit("<b>❌ Помилка читання файлу! Це не валідний JSON.</b>")
             return
 
         if "daily" not in import_data or "stats" not in import_data:
-            await utils.answer(message, "<b>❌ Невірний формат бази даних!</b>")
+            await target_message.edit("<b>❌ Невірний формат бази даних! У файлі відсутні потрібні ключі.</b>")
             return
 
-        # Отримуємо поточну базу і перезаписуємо/додаємо дані для вказаного чату
-        daily_data = self.db.get("PidorBot", "daily_data", {})
-        stats_data = self.db.get("PidorBot", "stats_data", {})
+        imported_stats = import_data["stats"]
+        users_count = len(imported_stats.keys())
+
+        if users_count == 0:
+            await target_message.edit("<b>⚠️ Цей файл порожній (немає статистики)! Імпорт скасовано.</b>")
+            return
+
+        # Відв'язуємо об'єкти від бази, щоб FTG гарантовано зберіг зміни
+        daily_data = copy.deepcopy(self.db.get("PidorBot", "daily_data", {}))
+        stats_data = copy.deepcopy(self.db.get("PidorBot", "stats_data", {}))
 
         daily_data[chat_id] = import_data["daily"]
-        stats_data[chat_id] = import_data["stats"]
+        stats_data[chat_id] = imported_stats
 
         self.db.set("PidorBot", "daily_data", daily_data)
         self.db.set("PidorBot", "stats_data", stats_data)
 
-        await utils.answer(message, f"<b>✅ Базу для чату <code>{chat_id}</code> успішно імпортовано!</b>")
+        await target_message.edit(f"<b>✅ Базу для чату <code>{chat_id}</code> успішно імпортовано!</b>\n👥 Завантажено користувачів: <b>{users_count}</b>")
+    
     async def _find_hero(self, message, role):
         chat_id = str(message.chat_id)
         lock_key = f"{chat_id}_{role}"
